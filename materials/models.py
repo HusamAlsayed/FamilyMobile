@@ -8,6 +8,7 @@ class Material(models.Model):
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=100)
     is_service = models.BooleanField()
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, blank=True)
 
 
 class OutlayType(models.Model):

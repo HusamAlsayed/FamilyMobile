@@ -56,10 +56,12 @@ class UserView(APIView):
 class SignUp(APIView):
     def post(self, request):
         username = request.data['username']
-
         password = request.data['password']
+        token = get_token(request)
+        parent_id = None if not token else token['id']
         user = CustomUser.objects.create_user(username=username,
-                                              password=password)
+                                              password=password,
+                                              parent_user_id=parent_id)
         payload = {
             'id': user.id,
             'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
@@ -68,6 +70,25 @@ class SignUp(APIView):
         token = jwt.encode(payload, 'secret', algorithm='HS256')
         return JsonResponse({"user": model_to_dict(user), "token": token})
 
+
+class ChildSignUp(APIView):
+    def post(self, request):
+        token = get_token(request)
+        if not token:
+            return HttpResponseForbidden()
+        parent_user_id = token['id']
+        username = request.data['username']
+        password = request.data['password']
+        child_user = CustomUser.objects.create_user(username=username,
+                                              password=password,
+                                              parent_user_id=parent_user_id)
+        payload = {
+            'id': child_user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+            'iat': datetime.datetime.utcnow()
+        }
+        token = jwt.encode(payload, 'secret', algorithm='HS256')
+        return JsonResponse({"user": model_to_dict(child_user), "token": token})
 
 
 # @csrf_exempt
